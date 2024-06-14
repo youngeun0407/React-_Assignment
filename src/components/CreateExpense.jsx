@@ -2,56 +2,29 @@ import { Section } from "../pages/Home";
 import styled from "styled-components";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { postExpense } from "../lib/api/db";
+import { QueryClient, useMutation } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
-const InputRow = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: flex-end;
-`;
-
-const InputGroupInline = styled.div`
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 120px;
-  label {
-    margin-bottom: 5px;
-    font-size: 14px;
-    color: #333;
-    text-align: left;
-  }
-  input {
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-  }
-`;
-
-const AddButton = styled.button`
-  padding: 8px 20px;
-  height: 34px;
-  margin-top: 10px;
-  background-color: #ff9054;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-  &:hover {
-    background-color: #ffc19f;
-  }
-`;
-
-export default function CreateExpense({ month, expenses, setExpenses }) {
+export default function CreateExpense({ month, user }) {
   const [newDate, setNewDate] = useState(
     `2024-${String(month).padStart(2, "0")}-01`
   );
   const [newItem, setNewItem] = useState("");
   const [newAmount, setNewAmount] = useState("");
   const [newDescription, setNewDescription] = useState("");
+const queryClient = new QueryClient();
+const navigate = useNavigate();
+
+
+const mutation = useMutation({mutationFn:postExpense, onSuccess: ()=>{
+  queryClient.invalidateQueries(["expenses"])
+  // navigate(0);
+  setNewDate(`2024-${String(month).padStart(2, "0")}-01`);
+      setNewItem("");
+      setNewAmount("");
+      setNewDescription("");
+}})
 
   const handleAddExpense = () => {
     const datePattern = /^\d{4}-\d{2}-\d{2}$/;
@@ -73,10 +46,12 @@ export default function CreateExpense({ month, expenses, setExpenses }) {
       item: newItem,
       amount: parsedAmount,
       description: newDescription,
+      createBy : user.userId,
     };
 
-    setExpenses([...expenses, newExpense]);
-    setNewDate(`2024-${String(month).padStart(2, "0")}-01`);
+mutation.mutate(newExpense);   
+
+setNewDate(`2024-${String(month).padStart(2, "0")}-01`);
     setNewItem("");
     setNewAmount("");
     setNewDescription("");
@@ -130,3 +105,46 @@ export default function CreateExpense({ month, expenses, setExpenses }) {
     </Section>
   );
 }
+
+
+const InputRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+`;
+
+const InputGroupInline = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 120px;
+  label {
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: #333;
+    text-align: left;
+  }
+  input {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+`;
+
+const AddButton = styled.button`
+  padding: 8px 20px;
+  height: 34px;
+  margin-top: 10px;
+  background-color: #ff9054;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+  &:hover {
+    background-color: #ffc19f;
+  }
+`;
